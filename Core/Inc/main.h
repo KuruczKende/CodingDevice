@@ -38,6 +38,7 @@ extern "C" {
 /* USER CODE BEGIN ET */
 typedef enum{
   ME_EEPROM_READ = 0,
+  ME_EEPROM_WRITE,
 
   ME_MAX
 }E_ERROR_CODES;

@@ -39,6 +39,7 @@ extern "C" {
 typedef enum{
   ME_EEPROM_READ = 0,
   ME_EEPROM_WRITE,
+  ME_EEPROM_ERASE,
 
   ME_MAX
 }E_ERROR_CODES;

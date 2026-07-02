@@ -103,6 +103,9 @@ int main(void)
   MX_TIM2_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
+  for(uint8_t i=0;i<8;i++){
+    aboErrorMap[i] = false;
+  }
 
   if (W25Q_Init() != W25Q_OK)
     Error_Handler();
@@ -120,9 +123,6 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  for(uint8_t i=0;i<8;i++){
-    aboErrorMap[i] = false;
-  }
   u8ErrorDispCnt = 0;
   u32LastShow = 0;
   while (1)

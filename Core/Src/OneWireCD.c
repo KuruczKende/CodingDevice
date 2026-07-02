@@ -29,11 +29,6 @@ typedef enum{
   ST_MAX
 }E_STATE;
 
-typedef struct{
-  uint8_t data[144];
-  char name[33];
-}C_CODING_DEVICE;
-
 typedef union{
   uint64_t data;
   struct{
@@ -67,7 +62,8 @@ typedef struct{
   U_ID uID;
   uint8_t u8ActiveCD;
   C_SETTINGS cSettings;
-  C_CODING_DEVICE acCD[8];
+  char aachName[8][33];
+  uint8_t aau8Data[8][144];
 }S_EEPROM_DATA;
 S_EEPROM_DATA sWorkingCopy;
 
@@ -89,7 +85,7 @@ enum{
 
 #define PULL W1_OUT_GPIO_Port->BSRR = 0x00000001
 #define RELE W1_OUT_GPIO_Port->BSRR = 0x00010000
-#define EEPROM_DATA_ADDRESS       (0x00000100)
+#define EEPROM_DATA_ADDRESS       (0x00000000)
 
 
 static E_STATE eState;
@@ -386,7 +382,7 @@ static void vFuncMemCopyScr(){
   else if(u16FuncVar==3){//read es
     if((WriteReg == uESreg.data)&&(u16Treg<0x0090)&&(uESreg.bitfield.PF==0)){
       uESreg.bitfield.AA = 1;
-      memcpy(&sWorkingCopy.acCD[sWorkingCopy.u8ActiveCD].data[u16Treg], au8ScratchPad, 8);
+      memcpy(&sWorkingCopy.aau8Data[sWorkingCopy.u8ActiveCD][u16Treg], au8ScratchPad, 8);
       boProgramming = true;
       ReadReg = 0xAA;
       eSequence = SEQ_R;
@@ -420,7 +416,7 @@ static void vFuncMemRead(){
       u16MemAddr = u16Treg;
     }
     if(u16MemAddr<0x0090){
-      ReadReg = sWorkingCopy.acCD[sWorkingCopy.u8ActiveCD].data[u16MemAddr];
+      ReadReg = sWorkingCopy.aau8Data[sWorkingCopy.u8ActiveCD][u16MemAddr];
       u16MemAddr++;
       eSequence = SEQ_R;
       u16Len=8;
@@ -517,15 +513,42 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   TIM2->CNT = 0;
 }
 
+bool boSaveData(){
+  if (W25Q_EraseSector(EEPROM_DATA_ADDRESS) != W25Q_OK){
+      vM_SetError(ME_EEPROM_ERASE);
+      return false;
+    }
+  if (W25Q_ProgramRaw((uint8_t*)&sWorkingCopy, 256, EEPROM_DATA_ADDRESS) != W25Q_OK){
+    vM_SetError(ME_EEPROM_WRITE);
+    return false;
+  }
+  if (W25Q_ProgramRaw(&((uint8_t*)&sWorkingCopy)[256], ((uint8_t*)&sWorkingCopy.aau8Data)-((uint8_t*)&sWorkingCopy) - 256, EEPROM_DATA_ADDRESS + 256) != W25Q_OK){
+    vM_SetError(ME_EEPROM_WRITE);
+    return false;
+  }
+  return true;
+}
+
 // Interface functions
 void vOWCD_Init(){
   eState=ST_IDLE;
   eSequence=SEQ_END;
   RELE;
   // Read from EEPROM to Working Copy
-  if(W25Q_ReadRaw((uint8_t*)&sWorkingCopy, sizeof(S_EEPROM_DATA), EEPROM_DATA_ADDRESS) != W25Q_OK)
+  if (W25Q_ReadRaw((uint8_t*)&sWorkingCopy, 256, EEPROM_DATA_ADDRESS) != W25Q_OK){
+    vM_SetError(ME_EEPROM_READ);
+    return;
+  }
+  if (W25Q_ReadRaw(&((uint8_t*)&sWorkingCopy)[256], ((uint8_t*)&sWorkingCopy.aau8Data)-((uint8_t*)&sWorkingCopy) - 256, EEPROM_DATA_ADDRESS + 256) != W25Q_OK){
+    vM_SetError(ME_EEPROM_READ);
+    return;
+  }
+  for(uint8_t u8Idx = 0; u8Idx < 8; u8Idx++){
+    if (W25Q_ReadRaw(sWorkingCopy.aau8Data[u8Idx], 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (u8Idx * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
       vM_SetError(ME_EEPROM_READ);
-
+      return;
+    }
+  }
 }
 
 void vOWCD_Process(){
@@ -560,9 +583,13 @@ void vOWCD_Process(){
 bool boOWCD_WriteMemory(const uint8_t u8Instance, const uint8_t u8Offset, const uint8_t* pu8Data, const uint8_t u8Len){
   if(u8Instance > 7) return false;
   if(u8Offset + u8Len > 144) return false;
-  memcpy(&sWorkingCopy.acCD[u8Instance].data[u8Offset], pu8Data, u8Len);
-  uint32_t u32AddressOffset = ((uint8_t*)&sWorkingCopy.acCD[u8Instance].data[u8Offset]) - ((uint8_t*)&sWorkingCopy);
-  if (W25Q_ProgramRaw(&sWorkingCopy.acCD[u8Instance].data[u8Offset], u8Len, EEPROM_DATA_ADDRESS + u32AddressOffset) != W25Q_OK){
+  memcpy(&sWorkingCopy.aau8Data[u8Instance][u8Offset], pu8Data, u8Len);
+
+  if (W25Q_EraseSector(EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (u8Instance * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+    vM_SetError(ME_EEPROM_ERASE);
+    return false;
+  }
+  if (W25Q_ProgramRaw(sWorkingCopy.aau8Data[u8Instance], 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (u8Instance * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
     vM_SetError(ME_EEPROM_WRITE);
     return false;
   }
@@ -572,26 +599,21 @@ bool boOWCD_WriteMemory(const uint8_t u8Instance, const uint8_t u8Offset, const 
 bool boOWCD_ReadMemory(const uint8_t u8Instance, const uint8_t u8Offset, uint8_t* pu8Data, const uint8_t u8Len){
   if(u8Instance >= 8) return false;
   if(u8Offset + u8Len > 144) return false;
-  memcpy(pu8Data, &sWorkingCopy.acCD[u8Instance].data[u8Offset], u8Len);
+  memcpy(pu8Data, &sWorkingCopy.aau8Data[u8Instance][u8Offset], u8Len);
   return true;
 }
 
 bool boOWCD_WriteName(const uint8_t u8Instance, const char* pchName, const uint8_t u8Len){
   if(u8Instance >= 8) return false;
-  strncpy(sWorkingCopy.acCD[u8Instance].name, pchName, u8Len);
-  sWorkingCopy.acCD[u8Instance].name[u8Len] = '\0';
-  uint32_t u32AddressOffset = ((uint8_t*)&sWorkingCopy.acCD[u8Instance].name) - ((uint8_t*)&sWorkingCopy);
-  if (W25Q_ProgramRaw((uint8_t*)&sWorkingCopy.acCD[u8Instance].name, u8Len, EEPROM_DATA_ADDRESS + u32AddressOffset) != W25Q_OK){
-    vM_SetError(ME_EEPROM_WRITE);
-    return false;
-  }
-  return true;
+  strncpy(sWorkingCopy.aachName[u8Instance], pchName, u8Len);
+  sWorkingCopy.aachName[u8Instance][u8Len] = '\0';
+  return boSaveData();
 }
 
 bool boOWCD_ReadName(const uint8_t u8Instance, char* pchName, uint8_t* pu8Len){
   if(u8Instance >= 8) return false;
-  *pu8Len = strlen(sWorkingCopy.acCD[u8Instance].name);
-  strcpy(pchName, sWorkingCopy.acCD[u8Instance].name);
+  *pu8Len = strlen(sWorkingCopy.aachName[u8Instance]);
+  strcpy(pchName, sWorkingCopy.aachName[u8Instance]);
   return true;
 }
 
@@ -601,10 +623,7 @@ void vOWCD_WriteSettings(const uint32_t u32Read1Time, const uint32_t u32Read0Tim
   sWorkingCopy.cSettings.u32ResetWait = u32ResetWait;
   sWorkingCopy.cSettings.u32PresenceTime = u32PresenceTime;
   sWorkingCopy.cSettings.u32TimeOut = u32TimeOut;
-  uint32_t u32AddressOffset = ((uint8_t*)&sWorkingCopy.cSettings) - ((uint8_t*)&sWorkingCopy);
-  if (W25Q_ProgramRaw((uint8_t*)&sWorkingCopy.cSettings, sizeof(C_SETTINGS), EEPROM_DATA_ADDRESS + u32AddressOffset) != W25Q_OK){
-    vM_SetError(ME_EEPROM_WRITE);
-  }
+  boSaveData();
 }
 
 bool boOWCD_ReadSettings(uint32_t* pu32Read1Time, uint32_t* pu32Read0Time, uint32_t* pu32ResetWait, uint32_t* pu32PresenceTime, uint32_t* pu32TimeOut){
@@ -620,10 +639,7 @@ bool boOWCD_ReadSettings(uint32_t* pu32Read1Time, uint32_t* pu32Read0Time, uint3
 void vOWCD_WriteID(const uint8_t* pu8ID){
   memcpy(sWorkingCopy.uID.str.au8SerialNum, pu8ID, 6);
   updateCRC8();
-  uint32_t u32AddressOffset = ((uint8_t*)&sWorkingCopy.uID.data) - ((uint8_t*)&sWorkingCopy);
-  if (W25Q_ProgramRaw((uint8_t*)&sWorkingCopy.uID.data, sizeof(U_ID), EEPROM_DATA_ADDRESS + u32AddressOffset) != W25Q_OK){
-    vM_SetError(ME_EEPROM_WRITE);
-  }
+  boSaveData();
 }
 
 void vOWCD_ReadID(uint8_t* pu8ID){
@@ -633,12 +649,7 @@ void vOWCD_ReadID(uint8_t* pu8ID){
 bool boOWCD_WriteActive(const uint8_t u8Active){
   if(u8Active >= 8) return false;
   sWorkingCopy.u8ActiveCD = u8Active;
-  uint32_t u32AddressOffset = ((uint8_t*)&sWorkingCopy.u8ActiveCD) - ((uint8_t*)&sWorkingCopy);
-  if (W25Q_ProgramRaw((uint8_t*)&sWorkingCopy.u8ActiveCD, 1, EEPROM_DATA_ADDRESS + u32AddressOffset) != W25Q_OK){
-    vM_SetError(ME_EEPROM_WRITE);
-    return false;
-  }
-  return true;
+  return boSaveData();
 }
 
 void vOWCD_ReadActive(uint8_t* pu8Active){

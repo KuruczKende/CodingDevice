@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\DESKTOP\Cpp\CodingDevice\x64\Debug\CodingDevice.exe</FullPath>
+      <FullPath>C:\DESKTOP\STM32\CodingDevice2\CodingDeviceApp\x64\Debug\CodingDevice.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

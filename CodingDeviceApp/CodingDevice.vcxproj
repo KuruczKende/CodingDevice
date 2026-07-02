@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CDC.h" />
     <ClInclude Include="CodingDevice.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
@@ -134,6 +135,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CDC.cpp" />
     <ClCompile Include="CodingDevice.cpp" />
     <ClCompile Include="serialib.cpp" />
   </ItemGroup>

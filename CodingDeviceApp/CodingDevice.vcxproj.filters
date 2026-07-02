@@ -30,12 +30,18 @@
     <ClInclude Include="serialib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CDC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CodingDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="serialib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CDC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

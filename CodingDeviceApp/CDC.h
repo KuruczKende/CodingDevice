@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdint.h>
 #include <string>
 #include <vector>
 #include "serialib.h"
@@ -8,77 +7,43 @@
 class CDC
 {
 public:
-    CDC();
-    ~CDC();
+	struct Frame
+	{
+		uint8_t u8Cmd;
+		uint8_t au8Payload[128];
+		uint8_t u8Len;
+		void push_back(uint8_t byte) {
+			if (u8Len < sizeof(au8Payload)) {
+				au8Payload[u8Len++] = byte;
+			}
+		}
+	};
 
-    bool Connect(const char* portName, uint32_t baudrate = 115200);
-    void Disconnect();
-    bool IsConnected() const;
+	CDC();
+	~CDC();
 
-    bool Ping();
-
-    bool ReadName(uint8_t instance, std::string& outName);
-    bool WriteName(uint8_t instance, const std::string& name);
-
-    bool ReadMemory(uint8_t instance, uint8_t offset, uint8_t len, std::vector<uint8_t>& outData);
-    bool WriteMemory(uint8_t instance, uint8_t offset, const std::vector<uint8_t>& data);
-
-    bool ReadActive(uint8_t& outActive);
-    bool WriteActive(uint8_t active);
-
-    bool ReadRelay(uint8_t& outRelay);
-    bool WriteRelay(uint8_t relay);
-
-    bool ReadSwitch(uint8_t& outSwitch);
-
-    bool ReadID(std::vector<uint8_t>& outId6);
-    bool WriteID(const std::vector<uint8_t>& id6);
-
-    bool ReadSettings(uint32_t& read1Time,
-        uint32_t& read0Time,
-        uint32_t& resetWait,
-        uint32_t& presenceTime,
-        uint32_t& timeOut);
-
-    bool WriteSettings(uint32_t read1Time,
-        uint32_t read0Time,
-        uint32_t resetWait,
-        uint32_t presenceTime,
-        uint32_t timeOut);
-
-    uint8_t GetLastError() const;
-    std::string GetLastErrorText() const;
+	bool boConnect(uint8_t u8ComPort);
+	bool boDisconnect();
+	bool boTransact(const uint8_t u8Cmd, const std::vector<uint8_t>& vu8Payload, Frame& cReply, const uint32_t u32TimeoutMs = 1000);
+	bool boReadMemory(uint8_t u8Id, uint16_t u16Offset, uint16_t u16Length, std::vector<uint8_t>& vu8Data);
+	bool boWriteMemory(uint8_t u8Id, uint16_t u16Offset, const std::vector<uint8_t>& vu8Data);
+	bool boReadName(uint8_t u8Id, std::string& strName);
+	bool boWriteName(uint8_t u8Id, const std::string& strName);
+	bool boReadActive(uint8_t& u8Active);
+	bool boWriteActive(uint8_t u8Active);
+	bool boReadRelay(uint8_t& u8Relay);
+	bool boWriteRelay(uint8_t u8Relay);
 
 private:
-    struct Frame
-    {
-        uint8_t cmd = 0;
-        std::vector<uint8_t> payload;
-    };
-
-    serialib m_serial;
-    bool m_connected;
-    uint8_t m_lastError;
-    std::string m_lastErrorText;
-
-    bool WriteRaw(const std::string& data);
-    bool ReadLine(std::string& outLine, uint32_t timeoutMs);
-    bool Transact(uint8_t cmd,
-        const std::vector<uint8_t>& payload,
-        Frame& reply,
-        uint32_t timeoutMs = 300);
-
-    bool ParseFrame(const std::string& line, Frame& frame);
-    std::string BuildFrame(uint8_t cmd, const std::vector<uint8_t>& payload) const;
-
-    void SetError(uint8_t err, const std::string& txt);
-
-    static uint8_t CRC8(const uint8_t* data, uint16_t len);
-    static uint16_t CRC16(const uint8_t* data, uint16_t len);
-    static bool HexToByte(char hi, char lo, uint8_t& out);
-    static char NibbleToHex(uint8_t n);
-    static void AppendByteHex(std::string& s, uint8_t v);
-    static void AppendU16HexLE(std::string& s, uint16_t v);
-    static uint32_t ReadU32LE(const uint8_t* p);
-    static void PushU32LE(std::vector<uint8_t>& v, uint32_t x);
+	serialib m_serial;
+	bool m_connected;
+	const char acHex[17] = "0123456789ABCDEF";
+	uint8_t CRC8(const uint8_t* pu8Data, uint32_t u32Len) const;
+	uint16_t CRC16(const uint8_t* pu8Data, uint32_t u32Len) const;
+	void vByte2Hex(uint8_t u8Byte, char* pchOut) const;
+	void vU162Hex(uint16_t u16Value, char* pchOut) const;
+	bool boCh2U8(char chD, uint8_t* pu8D) const;
+	bool boHex2Byte(char chH, char chL, uint8_t* pu8Byte) const;
+	bool boBuildFrame(uint8_t u8Cmd, const std::vector<uint8_t>& vu8Payload, char* pcFrame, uint32_t* pu32FrameLen) const;
+	bool boParseFrame(char* pcLine, Frame& cFrame) const;
 };

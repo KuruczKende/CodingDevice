@@ -215,7 +215,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
         szWindowClass,
         szTitle,
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, 760, 900,
+        CW_USEDEFAULT, 0, 800, 900,
         nullptr, nullptr,
         hInstance, nullptr
     );
@@ -261,7 +261,7 @@ bool ReadAllNames(HWND hWnd)
     for (uint8_t i = 0; i < 8; ++i)
     {
         std::string name;
-        if (!g_cdc.ReadName(i, name))
+        if (!g_cdc.boReadName(i, name))
             return false;
 
         std::wstring ws = Utf8ToWide(name);
@@ -277,11 +277,11 @@ bool ReadActiveAndRelay(HWND hWnd)
     uint8_t active = 0;
     uint8_t relay = 0;
 
-    if (!g_cdc.ReadActive(active))
+    if (!g_cdc.boReadActive(active))
         return false;
     if (active >= 8)
         return false;
-    if (!g_cdc.ReadRelay(relay))
+    if (!g_cdc.boReadRelay(relay))
         return false;
 
     g_u8Active = active;
@@ -293,39 +293,37 @@ bool ReadActiveAndRelay(HWND hWnd)
 
 bool ReadCurrentDevice(HWND hWnd)
 {
+    RefreshCombosFromCache(hWnd);
+
     int idx = GetSelectedIndex(hWnd, ID_CB_EDIT_ID);
     if (idx < 0 || idx >= 8)
         return false;
 
     std::vector<uint8_t> data;
-    if (!g_cdc.ReadMemory((uint8_t)idx, 0, 144, data))
+    if (!g_cdc.boReadMemory((uint8_t)idx, 0, 32, data))
+        return false;
+    if (!g_cdc.boReadMemory((uint8_t)idx, 32, 32, data))
+        return false;
+    if (!g_cdc.boReadMemory((uint8_t)idx, 64, 32, data))
+        return false;
+    if (!g_cdc.boReadMemory((uint8_t)idx, 96, 32, data))
+        return false;
+    if (!g_cdc.boReadMemory((uint8_t)idx, 128, 16, data))
         return false;
     if (data.size() != 144)
         return false;
 
     memcpy(g_au8Memory[idx], data.data(), 144);
 
-    std::string name;
-    if (!g_cdc.ReadName((uint8_t)idx, name))
-        return false;
-
-    std::wstring ws = Utf8ToWide(name);
-    wcsncpy_s(deviceNames[idx], _countof(deviceNames[idx]), ws.c_str(), 32);
-
-    SetControlText(hWnd, ID_EDIT_NAME, deviceNames[idx]);
-
     HWND hPanel = GetDlgItem(hWnd, ID_PANEL_EDITOR);
     for (int row = 0; row < 4; ++row)
     {
-        int offset = row * 36;
-        std::wstring line = FormatHexLine(&g_au8Memory[idx][offset], 36);
+        int offset = row * 32;
+        std::wstring line = FormatHexLine(&g_au8Memory[idx][offset], 32);
         SetWindowTextW(GetDlgItem(hPanel, ID_PAGE_EDIT_BASE + row), line.c_str());
     }
 
     RefreshCombosFromCache(hWnd);
-    SetSelectedIndex(hWnd, ID_CB_EDIT_NAME, idx);
-    SetSelectedIndex(hWnd, ID_CB_EDIT_ID, idx);
-    SetControlText(hWnd, ID_EDIT_NAME, deviceNames[idx]);
     return true;
 }
 
@@ -339,12 +337,8 @@ bool WriteCurrentDevice(HWND hWnd)
     if (wsName.size() > 32)
         wsName.resize(32);
 
-    if (!g_cdc.WriteName((uint8_t)idx, WideToUtf8(wsName)))
-        return false;
-
     wcsncpy_s(deviceNames[idx], _countof(deviceNames[idx]), wsName.c_str(), 32);
 
-    std::vector<uint8_t> full(144, 0);
     HWND hPanel = GetDlgItem(hWnd, ID_PANEL_EDITOR);
 
     for (int row = 0; row < 4; ++row)
@@ -357,18 +351,15 @@ bool WriteCurrentDevice(HWND hWnd)
         }
 
         std::vector<uint8_t> chunk;
-        if (!ParseHexLine(wsLine, chunk, 36))
+        if (!ParseHexLine(wsLine, chunk, 32))
             return false;
 
-        int offset = row * 36;
-        for (size_t i = 0; i < chunk.size(); ++i)
-            full[offset + (int)i] = chunk[i];
+        int offset = row * 32;
+        if (!g_cdc.boWriteMemory((uint8_t)idx, offset, chunk))
+            return false;
+        memcpy(&g_au8Memory[idx][offset], chunk.data(), 32);
     }
 
-    if (!g_cdc.WriteMemory((uint8_t)idx, 0, full))
-        return false;
-
-    memcpy(g_au8Memory[idx], full.data(), 144);
     RefreshCombosFromCache(hWnd);
     return true;
 }
@@ -544,9 +535,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     ShowError(hWnd, L"Először válassz COM portot.");
                     break;
                 }
+				uint8_t comPortNumber = 0;
+				if (port.length() > 3 && port.substr(0, 3) == L"COM")
+				{
+					try {
+						comPortNumber = static_cast<uint8_t>(std::stoi(port.substr(3)));
+					}
+					catch (const std::exception&)
+					{
+						ShowError(hWnd, L"Érvénytelen COM port szám.");
+						break;
+					}
+				}
 
-                std::string portA = WideToUtf8(port);
-                if (!g_cdc.Connect(portA.c_str(), 115200))
+                if (!g_cdc.boConnect(comPortNumber))
                 {
                     ShowError(hWnd, L"Nem sikerült csatlakozni.");
                     break;
@@ -559,7 +561,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else
             {
-                g_cdc.Disconnect();
+                g_cdc.boDisconnect();
                 g_boConnected = false;
                 SetWindowTextW(hBtnConnect, L"Connect");
                 ShowInfo(hWnd, L"Kapcsolat bontva.");
@@ -576,7 +578,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
 
             bool next = !g_boRelayOpen;
-            if (!g_cdc.WriteRelay(next ? 1 : 0))
+            if (!g_cdc.boWriteRelay(next ? 1 : 0))
             {
                 ShowError(hWnd, L"Relay írás sikertelen.");
                 break;
@@ -620,7 +622,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             std::wstring ws = GetControlText(hWnd, ID_EDIT_NAME);
             if (ws.size() > 32) ws.resize(32);
 
-            if (!g_cdc.WriteName((uint8_t)idx, WideToUtf8(ws)))
+            if (!g_cdc.boWriteName((uint8_t)idx, WideToUtf8(ws)))
             {
                 ShowError(hWnd, L"Név írás sikertelen.");
                 break;
@@ -642,7 +644,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (g_boConnected)
                 {
-                    if (!g_cdc.WriteActive((uint8_t)idx))
+                    if (!g_cdc.boWriteActive((uint8_t)idx))
                     {
                         ShowError(hWnd, L"Active device írás sikertelen.");
                         break;
@@ -660,7 +662,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (g_boConnected)
                 {
-                    if (!g_cdc.WriteActive((uint8_t)idx))
+                    if (!g_cdc.boWriteActive((uint8_t)idx))
                     {
                         ShowError(hWnd, L"Active device írás sikertelen.");
                         break;
@@ -750,7 +752,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_DESTROY:
         if (g_boConnected)
-            g_cdc.Disconnect();
+            g_cdc.boDisconnect();
 
         DeleteObject(hbrYellow);
         DeleteObject(hbrBlue);

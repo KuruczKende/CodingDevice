@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CDC.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|solutionrelative:CDC.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CodingDevice.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|solutionrelative:CodingDevice.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CDC.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|solutionrelative:CDC.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CodingDevice.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|solutionrelative:CodingDevice.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CDC.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|solutionrelative:CDC.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B78D677D-CD16-4B82-9DF5-4746A370CB85}|CodingDevice.vcxproj|C:\\PROGRAM FILES (X86)\\WINDOWS KITS\\10\\INCLUDE\\10.0.26100.0\\UM\\WINUSER.H||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
@@ -37,17 +37,17 @@
       "DocumentGroups": [
         {
           "DockedWidth": 198,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "CDC.h",
               "DocumentMoniker": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CDC.h",
               "RelativeDocumentMoniker": "CDC.h",
               "ToolTip": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CDC.h",
               "RelativeToolTip": "CDC.h",
-              "ViewState": "AgIAADwAAAAAAAAAAAAAAEcAAABTAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAACYAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2026-07-01T20:26:50.509Z",
               "EditorCaption": ""
@@ -60,20 +60,20 @@
               "RelativeDocumentMoniker": "CDC.cpp",
               "ToolTip": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CDC.cpp",
               "RelativeToolTip": "CDC.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC4AAAAPAAAAAAAAAA==",
+              "ViewState": "AgIAABoAAAAAAAAAAAAAACsAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-07-01T20:26:11.024Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "CodingDevice.cpp",
               "DocumentMoniker": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CodingDevice.cpp",
               "RelativeDocumentMoniker": "CodingDevice.cpp",
-              "ToolTip": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CodingDevice.cpp",
-              "RelativeToolTip": "CodingDevice.cpp",
-              "ViewState": "AgIAACADAAAAAAAAAAAAAEYDAAABAAAAAAAAAA==",
+              "ToolTip": "C:\\DESKTOP\\STM32\\CodingDevice2\\CodingDeviceApp\\CodingDevice.cpp*",
+              "RelativeToolTip": "CodingDevice.cpp*",
+              "ViewState": "AgIAALYAAAAAAAAAAAAAANkAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-06-24T18:13:12.173Z",
               "EditorCaption": ""

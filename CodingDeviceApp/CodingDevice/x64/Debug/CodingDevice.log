@@ -1,8 +1,6 @@
-﻿  CDC.cpp
-  CodingDevice.cpp
+﻿  CodingDevice.cpp
 C:\DESKTOP\STM32\CodingDevice2\CodingDeviceApp\CodingDevice.cpp(170,14): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
-C:\DESKTOP\STM32\CodingDevice2\CodingDeviceApp\CodingDevice.cpp(794,9): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
-  Generating Code...
+C:\DESKTOP\STM32\CodingDevice2\CodingDeviceApp\CodingDevice.cpp(796,9): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
   CodingDevice.vcxproj -> C:\DESKTOP\STM32\CodingDevice2\CodingDeviceApp\x64\Debug\CodingDevice.exe
   'pwsh.exe' is not recognized as an internal or external command,
   operable program or batch file.

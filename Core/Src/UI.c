@@ -10,19 +10,13 @@
 
 #define TIMEOUT         (1000)
 
-static uint8_t u8Cnt;
 static uint32_t u32LastPress;
 
 void vUI_Init(void){
-  u8Cnt = 1;
   u32LastPress = 0;
 }
 
 void vUI_Process(void){
-  u8Cnt--;
-  if (u8Cnt!=0)
-    return;
-
   // Check button
   if (HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == GPIO_PIN_RESET){
     if(HAL_GetTick() - u32LastPress > TIMEOUT){

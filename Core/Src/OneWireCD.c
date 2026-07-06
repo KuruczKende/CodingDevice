@@ -98,6 +98,7 @@ static uint8_t WriteReg;
 static uint8_t ReadReg;
 static bool RC_Flag;
 static bool boProgramming;
+static bool boProgrammed;
 static uint16_t u16MemAddr;
 static uint16_t u16Crc;
 static uint8_t au8ScratchPad[8];
@@ -470,6 +471,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
     //HIGH
     if(TIM2->CNT > 450){
       //reset
+      if(boProgramming == true){
+        boProgrammed = true;
+      }
       boProgramming = false;
       eState = ST_RESET;
       eSequence = SEQ_RESET;
@@ -533,6 +537,8 @@ bool boSaveData(){
 void vOWCD_Init(){
   eState=ST_IDLE;
   eSequence=SEQ_END;
+  boProgrammed = false;
+  boProgramming = false;
   RELE;
   // Read from EEPROM to Working Copy
   if (W25Q_ReadRaw((uint8_t*)&sWorkingCopy, 256, EEPROM_DATA_ADDRESS) != W25Q_OK){
@@ -549,10 +555,30 @@ void vOWCD_Init(){
       return;
     }
   }
+  sWorkingCopy.uID.str.u8FamilyCode = 0x2d;
 }
 
 void vOWCD_Process(){
-  if((boProgramming == false) && (TIM2->CNT>sWorkingCopy.cSettings.u32TimeOut)){
+  if((boProgrammed == true) && (TIM2->CNT>10000)){
+    // Save modifications
+    if (W25Q_EraseSector(EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (sWorkingCopy.u8ActiveCD * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+      vM_SetError(ME_EEPROM_ERASE);
+    }
+    uint8_t buffer[144];
+    if (W25Q_ReadRaw(buffer, 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (sWorkingCopy.u8ActiveCD * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+      vM_SetError(ME_EEPROM_READ);
+    }
+
+    if (W25Q_ProgramRaw(sWorkingCopy.aau8Data[sWorkingCopy.u8ActiveCD], 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (sWorkingCopy.u8ActiveCD * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+      vM_SetError(ME_EEPROM_WRITE);
+    }
+
+    if (W25Q_ReadRaw(sWorkingCopy.aau8Data[sWorkingCopy.u8ActiveCD], 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (sWorkingCopy.u8ActiveCD * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+      vM_SetError(ME_EEPROM_READ);
+    }
+    boProgrammed = false;
+  }
+  else if((boProgramming == false) && (TIM2->CNT>sWorkingCopy.cSettings.u32TimeOut)){
     eState=ST_IDLE;
     eSequence=SEQ_END;
     RELE;
@@ -589,9 +615,18 @@ bool boOWCD_WriteMemory(const uint8_t u8Instance, const uint8_t u8Offset, const 
     vM_SetError(ME_EEPROM_ERASE);
     return false;
   }
+  uint8_t buffer[144];
+  if (W25Q_ReadRaw(buffer, 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (u8Instance * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+    vM_SetError(ME_EEPROM_READ);
+  }
+
   if (W25Q_ProgramRaw(sWorkingCopy.aau8Data[u8Instance], 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (u8Instance * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
     vM_SetError(ME_EEPROM_WRITE);
     return false;
+  }
+
+  if (W25Q_ReadRaw(sWorkingCopy.aau8Data[u8Instance], 144, EEPROM_DATA_ADDRESS + EXT_FLASH_SECTOR_SIZE + (u8Instance * EXT_FLASH_SECTOR_SIZE)) != W25Q_OK){
+    vM_SetError(ME_EEPROM_READ);
   }
   return true;
 }

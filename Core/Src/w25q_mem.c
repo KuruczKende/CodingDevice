@@ -71,6 +71,7 @@ static inline u32_t page_to_addr(u32_t pageNum, u8_t pageShift); ///< Translate 
  */
 W25Q_STATE W25Q_Init(void) {
     W25Q_STATE state;       // temp status variable
+    u8_t buf_reg = 0;
 
     // read id
     u8_t id = 0;
@@ -110,7 +111,7 @@ W25Q_STATE W25Q_Init(void) {
 
     /* If Quad-SPI mode disabled */
     if (!w25q_status.QE) {
-        u8_t buf_reg = 0;
+        buf_reg = 0;
         state = W25Q_ReadStatusReg(&buf_reg, 2);
         if (state != W25Q_OK)
             return state;
@@ -119,6 +120,15 @@ W25Q_STATE W25Q_Init(void) {
         if (state != W25Q_OK)
             return state;
     }
+    /* Remove protection */
+    buf_reg = 0b00000010;
+    state = W25Q_WriteStatusReg(buf_reg, 2);
+    if (state != W25Q_OK)
+        return state;
+    buf_reg = 0b01100000;
+    state = W25Q_WriteStatusReg(buf_reg, 3);
+    if (state != W25Q_OK)
+        return state;
 
     // make another read
     state = W25Q_ReadStatusStruct(NULL);
@@ -142,7 +152,8 @@ W25Q_STATE W25Q_Init(void) {
  * @return W25Q_STATE enum
  */
 W25Q_STATE W25Q_EnableVolatileSR(void) {
-    return W25Q_PARAM_ERR;
+    return
+;
 }
 
 /**
